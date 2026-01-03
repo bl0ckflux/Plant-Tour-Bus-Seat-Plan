@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plant Tour Bus Seat Plan - Real-time</title>
+
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body { font-family: Arial; background: #f2f2f2; padding:16px; }
+.main-title { text-align:center; font-size:22px; font-weight:bold; margin-bottom:25px; }
+.bus-title { text-align:center; font-size:16px; font-weight:bold; margin:15px 10px; }
+.bus-wrapper { display:flex; justify-content:center; margin-bottom:30px; }
+.bus { display:grid; grid-template-columns:48px 48px 48px 48px 48px; gap:8px; background:#fff; padding:18px; border-radius:22px; }
+.seat { background:#e6b3b8; color:#4a1f1f; border-radius:12px; height:38px; font-size:12px; text-align:center; line-height:38px; cursor:pointer; user-select:none; font-weight:500; overflow:hidden; white-space:nowrap; }
+.seat.taken { background:#b71c1c; color:white; cursor:not-allowed; }
+.aisle { background:transparent; }
+.driver { background:#cfd8dc; border-radius:10px; font-size:10px; text-align:center; line-height:38px; grid-column:5; font-weight:600; }
+#resetSeats { display:block; margin:10px auto 20px; padding:8px 12px; background:#b71c1c; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
+#resetSeats:hover { background:#e53935; }
+</style>
+</head>
+<body>
+
+<h1 class="main-title">PLANT TOUR BUS SEAT PLAN</h1>
+
+<h2 class="bus-title">BUS 1</h2>
+<div class="bus-wrapper"><div class="bus" id="bus1"></div></div>
+
+<h2 class="bus-title">BUS 2</h2>
+<div class="bus-wrapper"><div class="bus" id="bus2"></div></div>
+
+<button id="resetSeats">Reset Seats</button>
+
+<script>
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDu25celCh5UjYciXfTI047_r2wt7SH_-s",
+  authDomain: "planttourbusseatplan.firebaseapp.com",
+  databaseURL: "https://planttourbusseatplan-default-rtdb.firebaseio.com",
+  projectId: "planttourbusseatplan",
+  storageBucket: "planttourbusseatplan.firebasestorage.app",
+  messagingSenderId: "690221707892",
+  appId: "1:690221707892:web:3965b10d1bf9a8ed521721",
+  measurementId: "G-6JWMH36HEV"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ===== SEAT MAP =====
+const seatMap = [
+["45","44","43","42","41"],
+["aisle","aisle","aisle","aisle","aisle"],
+["aisle","aisle","aisle","aisle","aisle"],
+["40","39","aisle","38","37"],
+["36","35","aisle","34","33"],
+["32","31","aisle","30","29"],
+["28","27","aisle","26","25"],
+["24","23","aisle","22","21"],
+["20","19","aisle","18","17"],
+["16","15","aisle","14","13"],
+["12","11","aisle","10","09"],
+["08","07","aisle","06","05"],
+["04","03","aisle","02","01"],
+["","","driver"]
+];
+
+// ===== FONT RESIZE =====
+function adjustFontSize(element){
+  let fontSize=14; element.style.fontSize=fontSize+"px";
+  while(element.scrollWidth>element.clientWidth && fontSize>6){ fontSize--; element.style.fontSize=fontSize+"px"; }
+}
+
+// ===== CREATE BUS SEATS =====
+function loadBus(busId){
+  const bus = document.getElementById(busId);
+  bus.innerHTML="";
+
+  seatMap.forEach(row=>{
+    row.forEach(seatId=>{
+      if(seatId==="aisle"){ bus.appendChild(document.createElement("div")); return; }
+      if(seatId==="driver"){ const d=document.createElement("div"); d.className="driver"; d.innerText="DRIVER"; bus.appendChild(d); return; }
+      if(seatId===""){ bus.appendChild(document.createElement("div")); return; }
+
+      const seat = document.createElement("div");
+      seat.classList.add("seat");
+      seat.innerText = seatId;
+      seat.style.color = "#4a1f1f"; // visible for empty seats
+
+      bus.appendChild(seat);
+
+      // ===== REAL-TIME LISTENER =====
+      const seatRef = db.ref(`buses/${busId}/${seatId}`);
+      seatRef.on("value", snapshot => {
+        const value = snapshot.val();
+        if(value){
+          seat.classList.add("taken");
+          seat.innerText = value;
+          seat.style.pointerEvents="none";
+          seat.style.color="#fff";
+        } else {
+          seat.classList.remove("taken");
+          seat.innerText = seatId;
+          seat.style.pointerEvents="auto";
+          seat.style.color="#4a1f1f";
+        }
+        adjustFontSize(seat);
+      });
+
+      // ===== CLICK TO ENTER NAME =====
+      seat.addEventListener("click", ()=>{
+        const name = prompt(`Seat ${seatId}\nEnter your FIRST name:`);
+        if(!name) return;
+        seatRef.set(name);
+      });
+
+    });
+  });
+}
+
+// ===== INITIAL LOAD =====
+loadBus("bus1");
+loadBus("bus2");
+
+// ===== ADMIN RESET =====
+document.getElementById("resetSeats").addEventListener("click", async ()=>{
+  const password = prompt("Enter admin password:");
+  if(password!=="2526") return alert("Incorrect password!");
+  await db.ref("buses").remove();
+  alert("Seats reset!");
+});
+</script>
+
+</body>
+</html>
