@@ -52,9 +52,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ===== SEAT MAP (unique IDs 01–49) =====
+// ===== SEAT MAP (49 seats) =====
 const seatMap = [
-  ["49","48","47","46","45"],
+  ["49","48","47","46","45"],   // full row of 5 seats
   ["44","43","aisle","42","41"],
   ["40","39","aisle","38","37"],
   ["36","35","aisle","34","33"],
@@ -67,7 +67,6 @@ const seatMap = [
   ["08","07","aisle","06","05"],
   ["04","03","aisle","02","01"],
   ["","","driver"]
-]
 ];
 
 // ===== FONT RESIZE =====
